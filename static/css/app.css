@@ -1,0 +1,217 @@
+:root {
+  --ink: #1a2332;
+  --muted: #5c6b7a;
+  --surface: #f3f6f9;
+  --panel: #ffffff;
+  --accent: #0d6e6e;
+  --accent-dark: #0a5555;
+  --accent-soft: #d8eeee;
+  --gold: #f4c430;
+  --warn: #b45309;
+  --line: #d5dde6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "DM Sans", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 50% at 0% 0%, #d8eeee 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 10%, #e8eef5 0%, transparent 50%),
+    var(--surface);
+  min-height: 100vh;
+}
+
+.app-nav {
+  background: linear-gradient(120deg, #0a5555, #1a2332 70%);
+  box-shadow: 0 2px 12px rgba(26, 35, 50, 0.18);
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.4rem;
+  background: var(--gold);
+  color: #1a2332;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+
+.page-title {
+  font-family: "Source Serif 4", serif;
+  font-weight: 700;
+  font-size: 1.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.page-sub { color: var(--muted); margin-bottom: 1.5rem; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+}
+
+.stat-card .label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-card .value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  line-height: 1.2;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel h2, .panel h3 {
+  font-family: "Source Serif 4", serif;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.btn-accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-accent:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: #fff;
+}
+
+.table thead th {
+  background: #eef3f7;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  border-bottom-width: 1px;
+}
+
+.tt-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+}
+
+.tt-grid th, .tt-grid td {
+  border: 1px solid var(--line);
+  padding: 0.4rem;
+  vertical-align: top;
+  min-width: 118px;
+}
+
+.tt-grid th {
+  background: #eef3f7;
+  text-align: center;
+  font-weight: 600;
+}
+
+.tt-cell {
+  background: var(--accent-soft);
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.4rem;
+  margin-bottom: 0.3rem;
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+}
+
+.tt-cell:hover { outline: 2px solid var(--accent); }
+
+.tt-cell .code { font-weight: 700; color: var(--accent-dark); }
+.tt-cell .meta { color: var(--muted); font-size: 0.75rem; }
+.tt-cell.locked { border-left-color: #92400e; background: #fef3c7; }
+.tt-cell.manual { border-left-color: #1d4ed8; }
+.tt-cell.clash { background: #fee2e2; border-left-color: #b91c1c; }
+
+.tt-empty {
+  min-height: 2.4rem;
+  border-radius: 0.35rem;
+  border: 1px dashed var(--line);
+  background: #fafbfc;
+}
+
+.tt-break {
+  background: #f3f4f6;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.badge-soft {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+.app-footer {
+  margin-top: 3rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.form-label { font-weight: 500; font-size: 0.9rem; }
+
+.group-checklist {
+  max-height: 11rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: #fafbfc;
+}
+
+.view-pills .nav-link { color: var(--ink); }
+.view-pills .nav-link.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .tt-wrap { overflow-x: auto; }
+}
+
+@media print {
+  .app-nav, .no-print, .app-footer { display: none !important; }
+  body { background: #fff; }
+  .tt-cell { cursor: default; }
+}

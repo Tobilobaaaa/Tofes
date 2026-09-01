@@ -1,0 +1,91 @@
+{% extends "timetable/base.html" %}
+{% block title %}Subjects{% endblock %}
+{% block content %}
+<h1 class="page-title">{% if editing %}Edit subject{% else %}Subjects{% endif %}</h1>
+<p class="page-sub">
+  Add or delete junior and senior subjects. Type how many periods each subject takes
+  <strong>per week</strong> in the table, then Update. That count is used for every class
+  that takes the subject. Subjects in a Together block can have <strong>different</strong>
+  weekly counts (Physics 4, Literature 3). Shared blocks are listed on
+  <a href="{% url 'simultaneous' %}">Together</a>.
+</p>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="panel">
+      <h3>{% if editing %}Edit subject{% else %}Add subject{% endif %}</h3>
+      <form method="post" action="{% if editing %}{% url 'edit_subject' editing.pk %}{% else %}{% url 'subjects' %}{% endif %}">
+        {% csrf_token %}
+        <div class="mb-2">
+          <label class="form-label">Code</label>
+          <input name="code" class="form-control" required placeholder="BSC"
+                 value="{% if editing %}{{ editing.code }}{% endif %}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Name</label>
+          <input name="name" class="form-control" required placeholder="Basic Science"
+                 value="{% if editing %}{{ editing.name }}{% endif %}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Section</label>
+          <select name="section" class="form-select">
+            {% for value, label in sections %}
+              <option value="{{ value }}" {% if editing and editing.section == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Simultaneous block (optional)</label>
+          <select name="simultaneous_group" class="form-select">
+            <option value="">None — own periods</option>
+            {% for g in groups %}
+              <option value="{{ g.id }}" {% if editing and editing.simultaneous_group_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Periods this subject takes per week</label>
+          <input name="default_periods" type="number" min="1" max="20" class="form-control"
+                 value="{% if editing %}{{ editing.default_periods }}{% else %}2{% endif %}">
+          <div class="form-text">English might be 4 or 5; most others 2 or 3. Re-generate the timetable after changing this.</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-accent">{% if editing %}Update{% else %}Add subject{% endif %}</button>
+          {% if editing %}<a class="btn btn-outline-secondary" href="{% url 'subjects' %}">Cancel</a>{% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="panel">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th>Code</th><th>Name</th><th>Section</th><th>Together with</th><th>Periods / week</th><th></th></tr></thead>
+        <tbody>
+          {% for s in subjects %}
+          <tr {% if editing and editing.pk == s.pk %}class="table-active"{% endif %}>
+            <td><strong>{{ s.code }}</strong></td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.get_section_display }}</td>
+            <td>{{ s.simultaneous_group.name|default:"—" }}</td>
+            <td style="min-width: 11rem;">
+              <form method="post" action="{% url 'update_subject_periods' s.pk %}" class="d-flex gap-1">
+                {% csrf_token %}
+                <input name="periods_per_week" type="number" min="1" max="20" class="form-control form-control-sm"
+                       value="{{ s.default_periods }}" aria-label="Periods per week for {{ s.code }}">
+                <button class="btn btn-sm btn-accent">Update</button>
+              </form>
+            </td>
+            <td class="text-end text-nowrap">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_subject' s.pk %}">Edit</a>
+              <a class="btn btn-sm btn-outline-danger" href="{% url 'delete_subject' s.pk %}"
+                 onclick="return confirm('Delete {{ s.code }}?')">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-muted">No subjects yet. Seed data or add one here.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

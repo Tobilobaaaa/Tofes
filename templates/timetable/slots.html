@@ -1,0 +1,172 @@
+{% extends "timetable/base.html" %}
+{% block title %}Bell times{% endblock %}
+{% block content %}
+<h1 class="page-title">Bell times</h1>
+<p class="page-sub">
+  Default day: 8:30 start, 40-minute periods.
+  Three periods, 15-minute short break, two periods, 40-minute long break,
+  three periods, 20-minute lesson break, then two periods to close.
+  Friday uses only the first 5 periods. Wednesday period 1 is Sport for every class.
+  Change any of this and rebuild.
+</p>
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="panel">
+      <h3>Print heading</h3>
+      <p class="small text-muted">Used on the PDF and print sheet. Saving this does not rebuild periods.</p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_header">
+        <div class="mb-2">
+          <label class="form-label">School name</label>
+          <input name="school_name" class="form-control" value="{{ bell.school_name }}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Term</label>
+          <input name="term_title" class="form-control" value="{{ bell.term_title }}">
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Assembly</label>
+            <input name="assembly_time" class="form-control" value="{{ bell.assembly_time }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Attendance</label>
+            <input name="attendance_time" class="form-control" value="{{ bell.attendance_time }}">
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Friday club time</label>
+            <input name="friday_club_time" class="form-control" value="{{ bell.friday_club_time }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Club label</label>
+            <input name="friday_club_label" class="form-control" value="{{ bell.friday_club_label }}">
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label">Fellowship time</label>
+            <input name="friday_fellowship_time" class="form-control" value="{{ bell.friday_fellowship_time }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Fellowship label</label>
+            <input name="friday_fellowship_label" class="form-control" value="{{ bell.friday_fellowship_label }}">
+          </div>
+        </div>
+        <button class="btn btn-outline-secondary w-100">Save print heading</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>School day</h3>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="rebuild">
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Start time</label>
+            <input name="start_time" type="time" class="form-control" value="{{ bell.start_time|time:'H:i' }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Period length (min)</label>
+            <input name="period_minutes" type="number" min="20" class="form-control" value="{{ bell.period_minutes }}">
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Periods before short break</label>
+            <input name="periods_before_short_break" type="number" min="1" class="form-control" value="{{ bell.periods_before_short_break }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Short break (min)</label>
+            <input name="short_break_minutes" type="number" min="5" class="form-control" value="{{ bell.short_break_minutes }}">
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Periods before long break</label>
+            <input name="periods_before_long_break" type="number" min="1" class="form-control" value="{{ bell.periods_before_long_break }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Long break (min)</label>
+            <input name="long_break_minutes" type="number" min="10" class="form-control" value="{{ bell.long_break_minutes }}">
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Periods before lesson break</label>
+            <input name="periods_before_lesson_break" type="number" min="1" class="form-control" value="{{ bell.periods_before_lesson_break }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Lesson break (min)</label>
+            <input name="lesson_break_minutes" type="number" min="5" class="form-control" value="{{ bell.lesson_break_minutes }}">
+          </div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Periods after lesson break (to closing)</label>
+          <input name="periods_after_lesson_break" type="number" min="1" class="form-control" value="{{ bell.periods_after_lesson_break }}">
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Friday periods</label>
+            <input name="friday_periods" type="number" min="1" class="form-control" value="{{ bell.friday_periods }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Min periods Mon–Thu</label>
+            <input name="min_periods_weekday" type="number" min="1" class="form-control" value="{{ bell.min_periods_weekday }}">
+            <div class="form-text">6 or 7 is enough. 8 is welcome when it fits.</div>
+          </div>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="wednesday_p1_is_sport" id="sport"
+                 {% if bell.wednesday_p1_is_sport %}checked{% endif %}>
+          <label class="form-check-label" for="sport">Wednesday period 1 is a whole-school activity</label>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Wednesday P1 label</label>
+          <input name="wednesday_activity" class="form-control" value="{{ bell.wednesday_activity }}">
+        </div>
+        <button class="btn btn-accent w-100">Save and rebuild periods</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="panel">
+      <h3>Generated periods</h3>
+      <p class="small text-muted">You can still tweak an individual start/end time without rebuilding the whole bell.</p>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Slot</th><th>Kind</th><th>Time</th><th></th></tr></thead>
+          <tbody>
+            {% for s in slots %}
+            <tr>
+              <td>{{ s.day }} {% if s.period %}P{{ s.period }}{% endif %}</td>
+              <td>
+                {% if s.is_reserved %}<span class="badge text-bg-warning">{{ s.activity_name }}</span>
+                {% elif s.is_break %}<span class="badge text-bg-secondary">{{ s.get_kind_display }}</span>
+                {% else %}<span class="badge badge-soft">Lesson</span>{% endif %}
+              </td>
+              <td>
+                <form method="post" class="d-flex gap-1 align-items-center">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_slot">
+                  <input type="hidden" name="slot_id" value="{{ s.id }}">
+                  <input type="time" name="start_time" value="{{ s.start_time|time:'H:i' }}" class="form-control form-control-sm">
+                  <span>–</span>
+                  <input type="time" name="end_time" value="{{ s.end_time|time:'H:i' }}" class="form-control form-control-sm">
+                  <button class="btn btn-sm btn-outline-secondary">Set</button>
+                </form>
+              </td>
+              <td class="text-end"><a class="btn btn-sm btn-outline-danger" href="{% url 'delete_slot' s.pk %}">Delete</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted">No periods. Save the bell to generate them.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

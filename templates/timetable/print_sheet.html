@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ bell.school_name }} TIME - TABLE</title>
+  <style>
+    @page { size: A3 landscape; margin: 8mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #111;
+      font-family: "Times New Roman", Times, serif;
+      background: #fff;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.6rem 1rem;
+      background: #1a2332;
+      color: #fff;
+      font-family: "Segoe UI", sans-serif;
+    }
+    .toolbar a, .toolbar button {
+      background: #f4c430;
+      color: #1a2332;
+      border: 0;
+      border-radius: 4px;
+      padding: 0.35rem 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .sheet { padding: 6mm 8mm 10mm; }
+    h1, h2 { text-align: center; margin: 0; letter-spacing: 0.04em; }
+    h1 { font-size: 20px; }
+    h2 { font-size: 15px; margin: 2px 0 8px; }
+    table.college {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 8px;
+      margin-bottom: 8px;
+    }
+    table.college th, table.college td {
+      border: 1px solid #111;
+      text-align: center;
+      vertical-align: middle;
+      padding: 1px 2px;
+      word-break: break-word;
+    }
+    table.college thead th {
+      font-size: 7px;
+      font-weight: 700;
+      height: 28px;
+      background: #f3f3f3;
+    }
+    .day, .vcell {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      font-size: 11px;
+      background: #f3f3f3;
+    }
+    .klass {
+      font-weight: 700;
+      font-size: 9px;
+      width: 42px;
+      background: #fafafa;
+    }
+    .sport { background: #fff8dc; font-weight: 700; }
+    .lesson { font-weight: 700; font-size: 7.5px; }
+    .friday-title { text-align: left; font-size: 12px; margin: 4px 0 2px; }
+    @media print {
+      .toolbar { display: none !important; }
+      .sheet { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <span>{{ run.name }}</span>
+    <button type="button" onclick="window.print()">Print / Save PDF</button>
+    <a href="{% url 'export_pdf' run.pk %}">Download PDF</a>
+    <a href="{% url 'timetable_detail' run.pk %}">Back to grid</a>
+  </div>
+  <div class="sheet">
+    <h1>{{ bell.school_name }} TIME - TABLE</h1>
+    <h2>{{ bell.term_title }}</h2>
+
+    <table class="college">
+      <thead>
+        <tr>
+          <th colspan="2"></th>
+          <th>{{ bell.assembly_time }}</th>
+          <th>{{ bell.attendance_time }}</th>
+          {% for slot in weekday_slots %}
+            <th>{{ slot.start_time|time:"H:i" }}-{{ slot.end_time|time:"H:i" }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for block in weekday_blocks %}
+          {% for row in block.rows %}
+          <tr>
+            {% if forloop.first %}
+              <th class="day" rowspan="{{ classes|length }}">{{ block.abbrev }}</th>
+            {% endif %}
+            <th class="klass">{{ row.class.sheet_label }}</th>
+            {% if forloop.parentloop.first and forloop.first %}
+              <td class="vcell" rowspan="{{ weekday_rowspan }}">ASSEMBLY</td>
+              <td class="vcell" rowspan="{{ weekday_rowspan }}">ATTENDANCE</td>
+            {% endif %}
+            {% for cell in row.cells %}
+              {% if cell.kind == 'break' %}
+                {% if forloop.parentloop.parentloop.first and forloop.parentloop.first %}
+                  <td class="vcell" rowspan="{{ weekday_rowspan }}">{{ cell.vlabel }}</td>
+                {% endif %}
+              {% elif cell.kind == 'sport' %}
+                <td class="sport">{{ cell.text }}</td>
+              {% else %}
+                <td class="lesson">{{ cell.text }}</td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <table class="college">
+      <thead>
+        <tr>
+          <th colspan="2">Friday</th>
+          {% for slot in friday_slots %}
+            <th>{{ slot.start_time|time:"H:i" }}-{{ slot.end_time|time:"H:i" }}</th>
+          {% endfor %}
+          <th>{{ bell.friday_club_time }}</th>
+          <th>{{ bell.friday_fellowship_time }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in friday_rows %}
+        <tr>
+          {% if forloop.first %}
+            <th class="day" rowspan="{{ friday_rowspan }}">Frid</th>
+          {% endif %}
+          <th class="klass">{{ row.class.sheet_label }}</th>
+          {% for cell in row.cells %}
+            {% if cell.kind == 'break' %}
+              {% if forloop.parentloop.first %}
+                <td class="vcell" rowspan="{{ friday_rowspan }}">{{ cell.vlabel }}</td>
+              {% endif %}
+            {% elif cell.kind == 'sport' %}
+              <td class="sport">{{ cell.text }}</td>
+            {% else %}
+              <td class="lesson">{{ cell.text }}</td>
+            {% endif %}
+          {% endfor %}
+          {% if forloop.first %}
+            <td class="vcell" rowspan="{{ friday_rowspan }}">{{ bell.friday_club_label }}</td>
+            <td class="vcell" rowspan="{{ friday_rowspan }}">{{ bell.friday_fellowship_label }}</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

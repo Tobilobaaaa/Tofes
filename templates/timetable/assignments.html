@@ -1,0 +1,84 @@
+{% extends "timetable/base.html" %}
+{% block title %}Who teaches what{% endblock %}
+{% block content %}
+<h1 class="page-title">Who teaches what</h1>
+<p class="page-sub">Link a teacher to each class + subject. Set how many periods that subject takes each week — here per class, or for all classes on the Subjects page.</p>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="panel">
+      <h3>Add assignment</h3>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-2">
+          <label class="form-label">Class</label>
+          <select name="school_class" class="form-select" required>
+            {% for c in classes %}<option value="{{ c.id }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Subject</label>
+          <select name="subject" id="assign-subject" class="form-select" required>
+            {% for s in subjects %}
+              <option value="{{ s.id }}" data-periods="{{ s.default_periods }}">
+                {{ s.code }} — {{ s.name }} ({{ s.get_section_display }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Teacher</label>
+          <select name="teacher" class="form-select" required>
+            {% for t in teachers %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Periods this subject takes per week</label>
+          <input name="periods_per_week" id="assign-periods" type="number" min="1" max="20" class="form-control" value="2">
+        </div>
+        <button class="btn btn-accent">Save</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="panel">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead><tr><th>Class</th><th>Subject</th><th>Teacher</th><th>Periods / week</th><th></th></tr></thead>
+          <tbody>
+            {% for a in assignments %}
+            <tr>
+              <td>{{ a.school_class }}</td>
+              <td>{{ a.subject.code }} — {{ a.subject.name }}</td>
+              <td>{{ a.teacher.name }}</td>
+              <td style="min-width: 11rem;">
+                <form method="post" action="{% url 'update_assignment_periods' a.pk %}" class="d-flex gap-1">
+                  {% csrf_token %}
+                  <input name="periods_per_week" type="number" min="1" max="20" class="form-control form-control-sm"
+                         value="{{ a.periods_per_week }}" aria-label="Periods per week">
+                  <button class="btn btn-sm btn-accent">Update</button>
+                </form>
+              </td>
+              <td class="text-end"><a class="btn btn-sm btn-outline-danger" href="{% url 'delete_assignment' a.pk %}">Delete</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-muted">No assignments yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const subjectSelect = document.getElementById('assign-subject');
+  const periodsInput = document.getElementById('assign-periods');
+  function syncPeriods() {
+    const option = subjectSelect.options[subjectSelect.selectedIndex];
+    if (option && option.dataset.periods) periodsInput.value = option.dataset.periods;
+  }
+  if (subjectSelect && periodsInput) {
+    subjectSelect.addEventListener('change', syncPeriods);
+    syncPeriods();
+  }
+</script>
+{% endblock %}

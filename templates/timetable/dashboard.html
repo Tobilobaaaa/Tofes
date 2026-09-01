@@ -1,0 +1,76 @@
+{% extends "timetable/base.html" %}
+{% block title %}Dashboard · School Timetable{% endblock %}
+{% block content %}
+<h1 class="page-title">Secondary school timetable</h1>
+<p class="page-sub">
+  Generate a weekly timetable for JSS 1 to SS 3 without halls. Teachers can take 3–4
+  subjects across junior and senior. After generation you can move or swap lessons;
+  the app blocks teacher and class clashes unless you force the change.
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="label">Teachers</div><div class="value">{{ stats.teachers }}</div></div>
+  <div class="stat-card"><div class="label">Subjects</div><div class="value">{{ stats.subjects }}</div></div>
+  <div class="stat-card"><div class="label">Classes</div><div class="value">{{ stats.classes }}</div></div>
+  <div class="stat-card"><div class="label">Assignments</div><div class="value">{{ stats.assignments }}</div></div>
+  <div class="stat-card"><div class="label">Teaching periods</div><div class="value">{{ stats.slots }}</div></div>
+  <div class="stat-card"><div class="label">Timetables</div><div class="value">{{ stats.runs }}</div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="panel">
+      <h2>Quick actions</h2>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'generate' %}" class="btn btn-accent">Generate timetable</a>
+        <a href="{% url 'timetable' %}" class="btn btn-outline-secondary">View published</a>
+        <a href="{% url 'teachers' %}" class="btn btn-outline-secondary">Teachers</a>
+        <a href="{% url 'assignments' %}" class="btn btn-outline-secondary">Who teaches what</a>
+        <a href="{% url 'slots' %}" class="btn btn-outline-secondary">Bell times</a>
+        <a href="{% url 'simultaneous' %}" class="btn btn-outline-secondary">Together</a>
+        <a href="{% url 'availability' %}" class="btn btn-outline-secondary">Teacher availability</a>
+      </div>
+      {% if active_run %}
+        <hr>
+        <p class="mb-1"><strong>Published:</strong> {{ active_run.name }}</p>
+        <p class="text-muted small mb-0">
+          {{ active_run.hard_violations }} hard / {{ active_run.soft_violations }} soft ·
+          {{ active_run.generations_run }} generations · {{ active_run.execution_seconds }}s
+        </p>
+      {% else %}
+        <p class="text-muted mt-3 mb-0">
+          No timetable yet. Run <code>python manage.py seed_school_data</code> then Generate.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <h2>Recent runs</h2>
+      {% if recent_runs %}
+        <ul class="list-group list-group-flush">
+          {% for run in recent_runs %}
+            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+              <a href="{% url 'timetable_detail' run.pk %}">{{ run.name }}</a>
+              <span class="badge badge-soft">{{ run.status }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted mb-0">No runs yet.</p>
+      {% endif %}
+    </div>
+    {% if heavy_teachers %}
+      <div class="panel">
+        <h2>Heavy loads</h2>
+        <p class="small text-muted">Teachers with more than 4 subjects — still allowed, but harder to keep clash-free.</p>
+        <ul class="mb-0">
+          {% for t in heavy_teachers %}
+            <li>{{ t.name }} ({{ t.n_subjects }} subjects)</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "timetable/base.html" %}
+{% block title %}Teachers{% endblock %}
+{% block content %}
+<h1 class="page-title">Teachers</h1>
+<p class="page-sub">A teacher can take 3–4 subjects across junior and senior. Tick the subjects they handle.</p>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="panel">
+      <h3>{% if editing %}Edit teacher{% else %}Add teacher{% endif %}</h3>
+      <form method="post" action="{% if editing %}{% url 'edit_teacher' editing.pk %}{% else %}{% url 'teachers' %}{% endif %}">
+        {% csrf_token %}
+        <div class="mb-2">
+          <label class="form-label">Name</label>
+          <input name="name" class="form-control" required value="{% if editing %}{{ editing.name }}{% endif %}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Email</label>
+          <input name="email" type="email" class="form-control" value="{% if editing %}{{ editing.email }}{% endif %}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Phone</label>
+          <input name="phone" class="form-control" value="{% if editing %}{{ editing.phone }}{% endif %}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Notes</label>
+          <input name="notes" class="form-control" placeholder="e.g. Civic JSS 1–3 only"
+                 value="{% if editing %}{{ editing.notes }}{% endif %}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">These subjects apply to</label>
+          <select name="section_scope" class="form-select">
+            {% for value, label in sections %}
+              <option value="{{ value }}" {% if editing and editing.can_teach.first.section_scope == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Subjects (3–4 typical)</label>
+          <div class="group-checklist">
+            {% for s in subjects %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="subjects" value="{{ s.id }}" id="s-{{ s.id }}"
+                       {% if selected_subject_ids and s.id in selected_subject_ids %}checked{% endif %}>
+                <label class="form-check-label" for="s-{{ s.id }}">{{ s.code }} — {{ s.name }} <span class="text-muted">({{ s.get_section_display }})</span></label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-accent">{% if editing %}Update{% else %}Save{% endif %}</button>
+          {% if editing %}<a class="btn btn-outline-secondary" href="{% url 'teachers' %}">Cancel</a>{% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="panel">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Name</th><th>Subjects</th><th></th></tr></thead>
+          <tbody>
+            {% for t in teachers %}
+            <tr>
+              <td>
+                <strong>{{ t.name }}</strong>
+                {% if t.notes %}<div class="small text-muted">{{ t.notes }}</div>{% endif %}
+                {% if t.n_subjects > 4 %}<span class="badge text-bg-warning">{{ t.n_subjects }} subjects</span>{% endif %}
+              </td>
+              <td>
+                {% for link in t.can_teach.all %}
+                  <span class="badge badge-soft me-1">{{ link.subject.code }}</span>
+                {% empty %}—{% endfor %}
+              </td>
+              <td class="text-end text-nowrap">
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_teacher' t.pk %}">Edit</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'delete_teacher' t.pk %}">Delete</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">No teachers yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

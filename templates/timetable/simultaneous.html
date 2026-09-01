@@ -1,0 +1,82 @@
+{% extends "timetable/base.html" %}
+{% block title %}Simultaneous subjects{% endblock %}
+{% block content %}
+<h1 class="page-title">Subjects taken together</h1>
+<p class="page-sub">
+  These senior blocks share a period when more than one stream has a lesson that week.
+  Each subject keeps its own periods/week — for example Physics and Accounting can be 4
+  while Literature is 3. On the extra slot, Literature is free.
+</p>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="panel">
+      <h3>{% if editing %}Edit block{% else %}New block{% endif %}</h3>
+      <form method="post" action="{% if editing %}{% url 'edit_simultaneous' editing.pk %}{% else %}{% url 'simultaneous' %}{% endif %}">
+        {% csrf_token %}
+        <div class="mb-2">
+          <label class="form-label">Name</label>
+          <input name="name" class="form-control" required
+                 placeholder="Biology / Yoruba"
+                 value="{% if editing %}{{ editing.name }}{% endif %}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Section</label>
+          <select name="section" class="form-select">
+            {% for value, label in sections %}
+              <option value="{{ value }}" {% if editing and editing.section == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Typical shared slots (optional hint)</label>
+          <input name="periods_per_week" type="number" min="1" class="form-control"
+                 value="{% if editing %}{{ editing.periods_per_week }}{% else %}3{% endif %}">
+          <div class="form-text">Does not override each subject. Set Physics to 4 and Literature to 3 on Subjects or Who teaches.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Subjects in this block</label>
+          <div class="group-checklist">
+            {% for s in subjects %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="subjects" value="{{ s.id }}" id="g-{{ s.id }}"
+                       {% if selected_ids and s.id in selected_ids %}checked{% endif %}>
+                <label class="form-check-label" for="g-{{ s.id }}">{{ s.code }} — {{ s.name }}</label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-accent">{% if editing %}Update block{% else %}Save block{% endif %}</button>
+          {% if editing %}<a class="btn btn-outline-secondary" href="{% url 'simultaneous' %}">Cancel</a>{% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="panel">
+      <table class="table align-middle mb-0">
+        <thead><tr><th>Block</th><th>Subjects</th><th>P/wk</th><th></th></tr></thead>
+        <tbody>
+          {% for g in groups %}
+          <tr>
+            <td><strong>{{ g.name }}</strong></td>
+            <td>
+              {% for s in g.subjects.all %}
+                <span class="badge badge-soft me-1">{{ s.code }} · {{ s.default_periods }}</span>
+              {% empty %}—{% endfor %}
+            </td>
+            <td>{{ g.periods_per_week }}</td>
+            <td class="text-end text-nowrap">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_simultaneous' g.pk %}">Edit</a>
+              <a class="btn btn-sm btn-outline-danger" href="{% url 'delete_simultaneous' g.pk %}">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted">No simultaneous blocks yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

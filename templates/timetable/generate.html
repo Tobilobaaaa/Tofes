@@ -1,0 +1,101 @@
+{% extends "timetable/base.html" %}
+{% block title %}Generate{% endblock %}
+{% block content %}
+<h1 class="page-title">Generate timetable</h1>
+<p class="page-sub">
+  Places every class lesson so no teacher and no class is double-booked. Elective streams
+  share a period when they both have a lesson that week; extra periods for one stream leave
+  the others free. Double periods are welcome. Wednesday P1 is Sport. Friday has 5 periods.
+  Mon–Thu aim for at least 6–7 lessons.
+</p>
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="panel">
+      <h3>Run generator</h3>
+      <p class="small text-muted">
+        {{ assignment_count }} class assignments · {{ class_count }} classes · {{ slot_count }} teaching periods
+      </p>
+      {% if load_issues %}
+      <div class="alert alert-danger">
+        <strong>These teachers have more weekly lessons than there are teaching periods.</strong>
+        A clash-free timetable is impossible until you reduce periods or add teachers.
+        <ul class="mb-0 mt-2">
+          {% for item in load_issues %}
+          <li>{{ item.teacher.name }}: {{ item.load }} lessons, {{ item.capacity }} slots ({{ item.over }} over)</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-2">
+          <label class="form-label">Name</label>
+          <input name="name" class="form-control" placeholder="e.g. 2026 First Term">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Population size</label>
+          <input name="population_size" type="number" class="form-control" value="36" min="12" max="300">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Max generations</label>
+          <input name="max_generations" type="number" class="form-control" value="40" min="1" max="1000">
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Crossover</label>
+            <input name="crossover_prob" type="number" step="0.05" class="form-control" value="0.7">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Mutation</label>
+            <input name="mutation_prob" type="number" step="0.05" class="form-control" value="0.25">
+          </div>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="publish" id="pub" checked>
+          <label class="form-check-label" for="pub">Publish if clash-free</label>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="keep_locked" id="lock" {% if has_locked %}checked{% endif %}>
+          <label class="form-check-label" for="lock">Keep locked lessons from the published timetable</label>
+        </div>
+        <button class="btn btn-accent btn-lg w-100" {% if assignment_count == 0 or slot_count == 0 %}disabled{% endif %}>
+          Generate clash-free timetable
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="panel">
+      <h3>What is enforced</h3>
+      <ul class="mb-0">
+        <li><strong>Hard:</strong> a teacher cannot be in two classes at once; a class cannot take two unrelated subjects at once; no lessons on break; respect “unavailable” teachers.</li>
+        <li><strong>Soft:</strong> preferred periods, fewer holes in a class day, at least 6–7 lessons Mon–Thu. Double periods (same subject back-to-back) are welcome.</li>
+        <li><strong>Together:</strong> Physics / Accounting / Literature can share a slot, but Literature can be 3 periods while Physics and Accounting are 4 — the extra slot leaves Literature free.</li>
+        <li><strong>Afterward:</strong> open the grid, click a lesson, move or swap. Delete old runs from All runs. Lock a cell so the next generate keeps it.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Recent runs</h3>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Name</th><th>Hard</th><th>Soft</th><th>Gens</th><th></th></tr></thead>
+        <tbody>
+          {% for r in runs %}
+          <tr>
+            <td><a href="{% url 'timetable_detail' r.pk %}">{{ r.name }}</a></td>
+            <td>{{ r.hard_violations }}</td>
+            <td>{{ r.soft_violations }}</td>
+            <td>{{ r.generations_run }}</td>
+            <td>
+              <a class="btn btn-sm btn-outline-danger" href="{% url 'delete_run' r.pk %}"
+                 onclick="return confirm('Delete {{ r.name }}?')">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-muted">None yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

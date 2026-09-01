@@ -1,0 +1,29 @@
+{% extends "timetable/base.html" %}
+{% block title %}All timetables{% endblock %}
+{% block content %}
+<h1 class="page-title">All generated timetables</h1>
+<p class="page-sub">Open a run to view or export it, or delete ones you no longer need.</p>
+<div class="panel">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Name</th><th>Status</th><th>Hard</th><th>Soft</th><th>When</th><th></th></tr></thead>
+    <tbody>
+      {% for r in runs %}
+      <tr>
+        <td><a href="{% url 'timetable_detail' r.pk %}">{{ r.name }}</a> {% if r.is_active %}<span class="badge text-bg-success">Published</span>{% endif %}</td>
+        <td>{{ r.status }}</td>
+        <td>{{ r.hard_violations }}</td>
+        <td>{{ r.soft_violations }}</td>
+        <td class="text-muted small">{{ r.created_at }}</td>
+        <td class="text-end text-nowrap">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'timetable_detail' r.pk %}">Open</a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'delete_run' r.pk %}"
+             onclick="return confirm('Delete {{ r.name }}? This cannot be undone.')">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted">None yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

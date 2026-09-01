@@ -1,0 +1,271 @@
+{% extends "timetable/base.html" %}
+{% load tt_extras %}
+{% block title %}{{ run.name }} · Timetable{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2 no-print">
+  <div>
+    <h1 class="page-title mb-1">{{ run.name }}</h1>
+    <p class="page-sub mb-0" id="run-status">
+      {{ run.hard_violations }} hard clash(es) · {{ run.soft_violations }} soft ·
+      {{ run.generations_run }} gens · {{ run.execution_seconds }}s
+      {% if run.is_active %}<span class="badge text-bg-success ms-1">Published</span>{% endif %}
+    </p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'export_timetable' run.pk %}">Export Excel</a>
+    <a class="btn btn-accent" href="{% url 'export_pdf' run.pk %}">Export PDF</a>
+    <a class="btn btn-outline-secondary" href="{% url 'print_sheet' run.pk %}" target="_blank">Print sheet</a>
+    <form method="post" action="{% url 'rescore_run' run.pk %}">{% csrf_token %}
+      <button class="btn btn-outline-secondary">Re-check clashes</button>
+    </form>
+    {% if not run.is_active %}
+      <a class="btn btn-accent" href="{% url 'publish_run' run.pk %}">Publish</a>
+    {% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'timetable_list' %}">All runs</a>
+    <a class="btn btn-outline-danger" href="{% url 'delete_run' run.pk %}"
+       onclick="return confirm('Delete {{ run.name }}? This cannot be undone.')">Delete</a>
+  </div>
+</div>
+
+{% if run.message %}
+  <div class="alert {% if run.hard_violations == 0 %}alert-success{% else %}alert-warning{% endif %} no-print" id="run-message">
+    {{ run.message }}
+  </div>
+{% endif %}
+
+{% if clash_notes %}
+  <div class="alert alert-warning no-print">
+    <strong>Clash notes</strong>
+    <ul class="mb-0 mt-2">
+      {% for note in clash_notes %}
+      <li>{{ note }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<div class="panel no-print">
+  <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center">
+    <ul class="nav view-pills gap-1">
+      <li class="nav-item">
+        <a class="nav-link {% if view == 'class' %}active{% endif %}" href="?view=class">By class</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if view == 'teacher' %}active{% endif %}" href="?view=teacher">By teacher</a>
+      </li>
+    </ul>
+    <div class="d-flex flex-wrap gap-1">
+      {% if view == 'teacher' %}
+        {% for t in teachers %}
+          <a class="btn btn-sm {% if focus and focus.id == t.id %}btn-accent{% else %}btn-outline-secondary{% endif %}"
+             href="?view=teacher&focus={{ t.id }}">{{ t.name }}</a>
+        {% endfor %}
+      {% else %}
+        {% for c in classes %}
+          <a class="btn btn-sm {% if focus and focus.id == c.id %}btn-accent{% else %}btn-outline-secondary{% endif %}"
+             href="?view=class&focus={{ c.id }}">{{ c }}</a>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  <p class="small text-muted mt-3 mb-0">
+    Click a lesson to move it, swap it, or lock it. Elective blocks move together unless you untick that option.
+    Amber = locked. Blue edge = moved by hand.
+  </p>
+</div>
+
+<div class="panel">
+  <h2 class="d-flex justify-content-between">
+    <span>{% if focus %}{{ focus }}{% else %}Grid{% endif %}</span>
+  </h2>
+  <div class="tt-wrap">
+    <table class="tt-grid">
+      <thead>
+        <tr>
+          <th>Period</th>
+          {% for day in days %}<th>{{ day }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for period in periods %}
+        <tr>
+          <th>
+            {{ row_titles|get_item:period }}
+            <div class="small fw-normal text-muted">{{ period_labels|get_item:period }}</div>
+          </th>
+          {% for day in days %}
+            {% with day_breaks=break_map|get_item:day %}
+            {% with is_brk=day_breaks|get_item:period %}
+            {% with day_res=reserved_map|get_item:day %}
+            {% with is_res=day_res|get_item:period %}
+            {% with day_act=activity_map|get_item:day %}
+            {% with activity=day_act|get_item:period %}
+            {% with day_kind=kind_map|get_item:day %}
+            {% with kind=day_kind|get_item:period %}
+            {% with day_slots=slot_ids|get_item:day %}
+            {% with slot_id=day_slots|get_item:period %}
+            {% with day_map=grid|get_item:day %}
+            {% with cells=day_map|get_item:period %}
+          <td data-slot="{{ slot_id }}" {% if is_brk %}class="tt-break"{% elif is_res %}class="tt-break"{% elif not slot_id %}class="tt-break"{% endif %}>
+            {% if not slot_id %}
+              Closed
+            {% elif is_brk %}
+              {{ kind }}
+            {% elif is_res %}
+              <strong>{{ activity }}</strong>
+            {% else %}
+              {% for e in cells %}
+                <div class="tt-cell {% if e.is_locked %}locked{% endif %} {% if e.is_manual %}manual{% endif %}"
+                     data-entry="{{ e.id }}"
+                     data-subject="{{ e.subject.code }} — {{ e.subject.name }}"
+                     data-teacher="{{ e.teacher.name }}"
+                     data-class="{{ e.school_class }}"
+                     data-group="{{ e.option_group }}"
+                     data-locked="{% if e.is_locked %}1{% else %}0{% endif %}"
+                     onclick="openAdjust(this)">
+                  <div class="code">{{ e.subject.code }}</div>
+                  <div class="meta">{% if view == 'teacher' %}{{ e.school_class }}{% else %}{{ e.teacher.name }}{% endif %}</div>
+                  {% if e.option_group %}<div class="meta">{{ e.option_group }}</div>{% endif %}
+                </div>
+              {% empty %}
+                <div class="tt-empty"></div>
+              {% endfor %}
+            {% endif %}
+          </td>
+            {% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="adjustModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Adjust lesson</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1"><strong id="adj-subject"></strong></p>
+        <p class="text-muted small" id="adj-meta"></p>
+        <div id="adj-feedback" class="alert d-none"></div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="move-group" checked>
+          <label class="form-check-label" for="move-group">Move the whole elective block (CHEM/COM/CRS etc.)</label>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Move to period</label>
+          <select id="target-slot" class="form-select">
+            {% for s in all_slots %}
+              <option value="{{ s.id }}">{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Or swap with another lesson</label>
+          <select id="swap-entry" class="form-select">
+            <option value="">—</option>
+            {% for e in entries %}
+              <option value="{{ e.id }}">{{ e.school_class }} · {{ e.subject.code }} · {{ e.teacher.name }} · {{ e.time_slot }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="force-move">
+          <label class="form-check-label" for="force-move">Force even if there is a clash</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" id="lock-btn">Lock / unlock</button>
+        <button class="btn btn-outline-secondary" type="button" onclick="doSwap()">Swap</button>
+        <button class="btn btn-accent" type="button" onclick="doMove()">Move</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const RUN_ID = {{ run.pk }};
+const CSRF = "{{ csrf_token }}";
+let currentEntry = null;
+const modal = new bootstrap.Modal(document.getElementById('adjustModal'));
+
+function openAdjust(el) {
+  currentEntry = el.dataset.entry;
+  document.getElementById('adj-subject').textContent = el.dataset.subject;
+  document.getElementById('adj-meta').textContent =
+    el.dataset.class + ' · ' + el.dataset.teacher + (el.dataset.group ? ' · ' + el.dataset.group : '');
+  document.getElementById('adj-feedback').className = 'alert d-none';
+  document.getElementById('lock-btn').textContent = el.dataset.locked === '1' ? 'Unlock' : 'Lock';
+  modal.show();
+}
+
+function postForm(url, data) {
+  const body = new URLSearchParams(data);
+  return fetch(url, {
+    method: 'POST',
+    headers: {'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded'},
+    body
+  }).then(r => r.json());
+}
+
+function showFeedback(payload, okFallback) {
+  const box = document.getElementById('adj-feedback');
+  box.classList.remove('d-none');
+  if (payload.ok) {
+    box.className = 'alert alert-success';
+    box.textContent = payload.forced
+      ? 'Moved with a clash. Re-check the grid.'
+      : (okFallback || 'Updated.');
+    document.getElementById('run-status').textContent =
+      payload.hard_violations + ' hard clash(es) · ' + payload.soft_violations + ' soft';
+    setTimeout(() => location.reload(), 600);
+  } else {
+    box.className = 'alert alert-danger';
+    box.textContent = (payload.reasons || ['Could not apply that change.']).join(' ');
+  }
+}
+
+function extra() {
+  return {
+    move_group: document.getElementById('move-group').checked ? '1' : '0',
+    force: document.getElementById('force-move').checked ? '1' : '0',
+  };
+}
+
+function doMove() {
+  if (!currentEntry) return;
+  postForm(`/timetable/${RUN_ID}/move/`, {
+    entry_id: currentEntry,
+    time_slot_id: document.getElementById('target-slot').value,
+    ...extra()
+  }).then(p => showFeedback(p, 'Lesson moved.'));
+}
+
+function doSwap() {
+  const other = document.getElementById('swap-entry').value;
+  if (!currentEntry || !other) return;
+  postForm(`/timetable/${RUN_ID}/swap/`, {
+    entry_a: currentEntry,
+    entry_b: other,
+    ...extra()
+  }).then(p => showFeedback(p, 'Lessons swapped.'));
+}
+
+document.getElementById('lock-btn').addEventListener('click', () => {
+  if (!currentEntry) return;
+  const el = document.querySelector(`[data-entry="${currentEntry}"]`);
+  const next = el && el.dataset.locked === '1' ? '0' : '1';
+  postForm(`/timetable/${RUN_ID}/lock/`, {
+    entry_id: currentEntry,
+    locked: next,
+    move_group: document.getElementById('move-group').checked ? '1' : '0',
+  }).then(() => location.reload());
+});
+</script>
+{% endblock %}
