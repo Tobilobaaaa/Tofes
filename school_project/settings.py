@@ -29,7 +29,21 @@ DEBUG = _env_bool('DEBUG', default=True)
 
 ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
+_railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip()
+if _railway_domain and _railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_railway_domain)
+
+# Allow Railway public URLs (e.g. tofes-production-d6de.up.railway.app).
+if _railway_domain or os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
+    for host in ('.up.railway.app', '.railway.app'):
+        if host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(host)
+
 CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+if _railway_domain:
+    for origin in (f'https://{_railway_domain}', f'http://{_railway_domain}'):
+        if origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(origin)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
